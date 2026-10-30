@@ -91,7 +91,6 @@ docs/         PLANO.md (decisões), SEGURANCA.md (modelo de ameaças)
 ## Documentação
 
 - [Modelo de segurança e limitações](docs/SEGURANCA.md)
-- [Decisões e estado do projeto](docs/PLANO.md)
 
 ## Limites conhecidos
 
