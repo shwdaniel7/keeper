@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>KEEPER</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231b1a17'/%3E%3Cpath d='M5 6h8l6 6-6 6H5z' fill='%23ffd60a' stroke='%23ffd60a' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='9' cy='12' r='1.5' fill='%231b1a17'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="anon">
+  <div id="app">
+    <nav class="side" aria-label="Principal">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M4 3h9l7 9-7 9H4z" fill="#ffd60a" stroke="#ffd60a" stroke-width="2" stroke-linejoin="round"/><circle cx="8.5" cy="12" r="1.8" fill="#1b1a17"/></svg>
+        KEEPER
+      </div>
+      <div class="links" id="links">
+        <i class="pill" id="pill" aria-hidden="true"></i>
+        <a href="#/" data-nav="">Visão geral</a>
+        <a href="#/inventario" data-nav="inventario">Inventário</a>
+        <a href="#/emprestimos" data-nav="emprestimos">Empréstimos <span class="count" id="n-emprestimos" hidden></span></a>
+        <a href="#/manutencao" data-nav="manutencao">Manutenção <span class="count" id="n-manutencao" hidden></span></a>
+        <a href="#/etiquetas" data-nav="etiquetas">Etiquetas</a>
+        <a href="#/relatorios" data-nav="relatorios">Relatórios</a>
+        <a href="#/importar" data-nav="importar">Importar CSV</a>
+        <a href="#/config" data-nav="config">Configurações</a>
+      </div>
+      <button class="sair" data-act="sair">Sair</button>
+      <p class="hint"><kbd>/</kbd> buscar<br><kbd>N</kbd> novo equipamento<br><kbd>Esc</kbd> fechar painel</p>
+    </nav>
+    <main id="main" tabindex="-1"></main>
+  </div>
+
+  <div class="layer" id="layer">
+    <div class="scrim" id="scrim" data-act="close"></div>
+    <aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Detalhes"></aside>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

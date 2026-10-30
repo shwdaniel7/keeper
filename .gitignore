@@ -1,0 +1,30 @@
+# Dados (nunca versionar: inventário real e hash da senha)
+keeper.db
+keeper.db-*
+*.db
+*.db-shm
+*.db-wal
+backups/
+
+# Segredos
+.env
+.env.*
+
+# Dependências e logs
+node_modules/
+npm-debug.log*
+*.log
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Ferramentas locais
+.claude/
+
+# Docs
+docs/PLANO.md
