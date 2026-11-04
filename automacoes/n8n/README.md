@@ -111,7 +111,9 @@ sudo systemctl restart systemd-logind
 1. No Telegram (aplicativo ou <https://web.telegram.org>), abra o contato **@BotFather** e envie `/newbot`. Escolha um nome e um usuário que termine em `bot`.
 2. Ele devolve um **token** (`123456:ABC...`). Guarde.
 3. Abra o seu bot novo e envie qualquer mensagem (ex.: "oi"). O bot só pode escrever para quem falou com ele primeiro.
-4. No navegador, abra `https://api.telegram.org/bot<SEU_TOKEN>/getUpdates` e procure `"chat":{"id":123456789`. Esse número é o seu **chat ID**.
+4. No navegador, abra `https://api.telegram.org/botSEU_TOKEN/getUpdates`, trocando `SEU_TOKEN` pelo token do passo 2. A palavra `bot` fica **colada** no token, e não leve `<` nem `>` para a URL (com eles dá `404 Not Found`). Procure `"chat":{"id":123456789`: esse número é o seu **chat ID**. Se `result` vier vazio (`[]`), mande outra mensagem ao bot e recarregue.
+
+> O token dá controle total do bot. Não o mostre em prints nem o commite. Se vazar, use `/revoke` no @BotFather para gerar outro.
 
 ### 7. Criar as credenciais no n8n
 
@@ -135,7 +137,7 @@ Em <http://localhost:5678>: menu lateral → **Credentials** → **Create creden
 Clique duas vezes em cada nó:
 
 1. **Config**: troque `frase` por uma frase longa só sua. **Anote em um lugar seguro**: sem ela não há como restaurar. Deixe `keeperUrl` como está (`http://127.0.0.1:3000`).
-2. **Login**: em *Credential for Custom Auth*, escolha `KEEPER login`.
+2. **Login**: deixe *Authentication* e *Generic Auth Type* como estão (`Generic Credential Type` e `Custom Auth`). No campo **Custom Auth**, logo abaixo, escolha `KEEPER login` na lista. Se ela não existir, *Create new credential* abre o JSON do passo 7.
 3. **Enviar ao Telegram**: escolha a credencial `Telegram KEEPER` e cole o *Chat ID*.
 4. **Avisar falha no Telegram**: mesma credencial e mesmo *Chat ID*.
 
@@ -152,6 +154,22 @@ Teste também o aviso de falha: pare o KEEPER (`sudo systemctl stop keeper`), ex
 Ative o interruptor **Active** (ou *Publish*, conforme a versão) no topo. A partir daí roda todo dia às 03:00, com o notebook ligado.
 
 > Depois de preencher a frase, não exporte nem commite o workflow: ela fica dentro dele.
+
+## Mudar o horário do backup
+
+Abra o primeiro nó ("Todo dia às 03:00"), que é um *Schedule Trigger*, e edite a expressão cron. Alguns exemplos:
+
+| Quando | Expressão |
+|---|---|
+| Todo dia às 03:00 | `0 3 * * *` |
+| Dias úteis às 17:30 | `30 17 * * 1-5` |
+| Dias úteis às 18:00 | `0 18 * * 1-5` |
+
+O formato é `minuto hora * * dias-da-semana` (1 = segunda, 5 = sexta). O horário segue o fuso definido no `docker run` (`GENERIC_TIMEZONE`). O notebook precisa estar ligado nesse horário. Salve e deixe o workflow ativo.
+
+## Registrar retirada por foto (IA)
+
+Há um segundo workflow que registra empréstimos a partir da foto da folha de retirada: veja [registrar-retirada.md](registrar-retirada.md).
 
 ## Usar de outro computador (opcional)
 
@@ -212,4 +230,5 @@ Frase errada ou arquivo corrompido: o script falha em vez de gerar um banco queb
 | Login falha com "connection refused" | KEEPER parado: `sudo systemctl status keeper` |
 | Criar backup falha com 415 | O corpo precisa ser JSON (já está configurado; só ocorre se o nó for alterado) |
 | Telegram `chat not found` | Você ainda não enviou mensagem ao bot (passo 6.3) |
+| `getUpdates` responde `404 Not Found` | URL com `<` `>` em volta do token, ou token errado (passo 6.4) |
 | `docker: permission denied` | Faltou o `sudo` antes do `docker` |
