@@ -74,7 +74,7 @@ node --test           # roda os testes
 
 - Uma cópia automática por dia em `backups/` (ao iniciar e a cada 6 h, se ainda não houver a de hoje); ficam as últimas 14.
 - Em *Configurações* dá para criar, baixar e restaurar. Antes de restaurar, o estado atual é salvo; a senha e as sessões não mudam.
-- O app roda só localmente. Copie `backups/` e `keeper.db` periodicamente para outro disco ou nuvem: os backups automáticos ficam na mesma máquina do banco.
+- O app roda só localmente. Copie `backups/` e `keeper.db` periodicamente para outro disco ou nuvem: os backups automáticos ficam na mesma máquina do banco. Há um workflow n8n que faz isso sozinho, com criptografia: [automacoes/n8n](automacoes/n8n/README.md).
 
 ## Estrutura
 

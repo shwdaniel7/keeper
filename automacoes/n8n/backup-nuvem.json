@@ -1,0 +1,337 @@
+{
+  "name": "KEEPER - backup na nuvem",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "Todo dia às 03:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 3 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n2",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "keeperUrl",
+              "value": "http://127.0.0.1:3000",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "frase",
+              "value": "TROQUE-ESTA-FRASE",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "TROCAR",
+          "name": "KEEPER login"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.keeperUrl }}/api/login",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "n4",
+      "name": "Criar backup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.keeperUrl }}/api/backup",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $('Login').first().json.headers['set-cookie'][0].split(';')[0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n5",
+      "name": "Baixar backup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $('Config').first().json.keeperUrl }}/api/backup/{{ $json.nome }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $('Login').first().json.headers['set-cookie'][0].split(';')[0] }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "n6",
+      "name": "Criptografar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst FRASE = $('Config').first().json.frase;\nif (!FRASE || FRASE === 'TROQUE-ESTA-FRASE') throw new Error('Defina a frase de criptografia no nó Config');\nconst nome = $('Criar backup').first().json.nome;\nconst dados = await this.helpers.getBinaryDataBuffer(0, 'data');\n// Confere o cabeçalho do SQLite: pega download vazio ou página de erro antes de subir.\nif (dados.subarray(0, 15).toString() !== 'SQLite format 3') throw new Error('O arquivo baixado não é um banco SQLite');\n// Formato: salt(16) + iv(12) + tag(16) + dados. Para abrir: automacoes/n8n/descriptografar.js\nconst salt = crypto.randomBytes(16);\nconst iv = crypto.randomBytes(12);\nconst cifra = crypto.createCipheriv('aes-256-gcm', crypto.scryptSync(FRASE, salt, 32), iv);\nconst cifrado = Buffer.concat([cifra.update(dados), cifra.final()]);\nconst saida = Buffer.concat([salt, iv, cifra.getAuthTag(), cifrado]);\nconst bin = await this.helpers.prepareBinaryData(saida, nome + '.enc', 'application/octet-stream');\nreturn [{ json: { nome }, binary: { data: bin } }];"
+      }
+    },
+    {
+      "id": "n7",
+      "name": "Enviar ao Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "TROCAR",
+          "name": "Telegram KEEPER"
+        }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "sendDocument",
+        "chatId": "COLOQUE_SEU_CHAT_ID",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "={{ 'KEEPER backup ' + $json.nome }}"
+        }
+      }
+    },
+    {
+      "id": "n8",
+      "name": "Logout",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.keeperUrl }}/api/logout",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $('Login').first().json.headers['set-cookie'][0].split(';')[0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n9",
+      "name": "Se algo falhar",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n10",
+      "name": "Avisar falha no Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        240
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "TROCAR",
+          "name": "Telegram KEEPER"
+        }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "COLOQUE_SEU_CHAT_ID",
+        "text": "=KEEPER: o backup na nuvem FALHOU\nEtapa: {{ $json.execution.lastNodeExecuted }}\nErro: {{ $json.execution.error.message }}",
+        "additionalFields": {}
+      }
+    }
+  ],
+  "connections": {
+    "Todo dia às 03:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Criar backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar backup": {
+      "main": [
+        [
+          {
+            "node": "Baixar backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixar backup": {
+      "main": [
+        [
+          {
+            "node": "Criptografar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criptografar": {
+      "main": [
+        [
+          {
+            "node": "Enviar ao Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar ao Telegram": {
+      "main": [
+        [
+          {
+            "node": "Logout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Se algo falhar": {
+      "main": [
+        [
+          {
+            "node": "Avisar falha no Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
